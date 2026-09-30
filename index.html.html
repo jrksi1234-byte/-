@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>거듭제곱 맞히기</title>
+<style>
+:root{--bg:#f3f6fb;--fg:#1b2333;--card:#fff;--line:#d5dcea;--acc:#2f5bea;--ok:#1f9d55;--bad:#d64545;--muted:#66708a;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#12161f;--fg:#e8ecf5;--card:#1b2130;--line:#2c3550;--acc:#7c9cff;--ok:#4cc783;--bad:#ff7b7b;--muted:#98a2bd}}
+:root[data-theme="dark"]{--bg:#12161f;--fg:#e8ecf5;--card:#1b2130;--line:#2c3550;--acc:#7c9cff;--ok:#4cc783;--bad:#ff7b7b;--muted:#98a2bd}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:"Noto Sans KR",system-ui,sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:440px;padding:20px 16px 32px}
+h1{font-size:20px;margin:0 0 4px}
+.sub{color:var(--muted);font-size:13px;margin:0 0 16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;text-align:center}
+.num{font-size:64px;font-weight:700;letter-spacing:-1px;margin:8px 0 16px}
+.row{display:flex;gap:8px;align-items:center;justify-content:center;flex-wrap:wrap}
+input{width:70px;font-size:20px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg);text-align:center}
+button{font-size:16px;padding:12px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;cursor:pointer;font-weight:600}
+button.g{background:var(--line);color:var(--fg)}
+.msg{min-height:64px;margin-top:14px;font-size:15px;line-height:1.5}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.intro{text-align:left}.intro ul{padding-left:20px;margin:10px 0;line-height:1.7}.intro p{margin:8px 0;line-height:1.6}.intro button{width:100%;margin-top:8px}.hide{display:none}
+.stat{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:10px}
+</style>
+</head>
+<body>
+<main>
+<h1>거듭제곱 맞히기</h1>
+<div class="card intro" id="intro">
+  <p>화면에 수가 하나 나오면, 그 수가 <b>어떤 수의 몇 제곱</b>인지 맞히는 게임이에요.</p>
+  <p>예를 들어 <b>243</b>이 나오면 밑에 <b>3</b>, 지수에 <b>5</b>를 입력해요. (3⁵ = 243)</p>
+  <p>나오는 수의 범위:</p>
+  <ul>
+    <li>2의 2승 ~ 11승</li>
+    <li>3의 2승 ~ 6승</li>
+    <li>4의 2승 ~ 5승</li>
+    <li>5의 2승 ~ 4승</li>
+    <li>6의 2승 ~ 3승</li>
+  </ul>
+  <p>16, 64, 256, 1024처럼 답이 둘인 수는 어느 쪽이든 정답이에요. 범위에 없는 밑(예: 9)은 오답이에요.</p>
+  <button id="start">시작하기</button>
+</div>
+<div id="game" class="hide">
+<div class="stat"><span id="prog"></span><span id="score"></span></div>
+<div class="card">
+  <div>이 수는 어떤 수의 몇 제곱일까요?</div>
+  <div class="num" id="num">?</div>
+  <div class="row">
+    <input id="b" type="number" inputmode="numeric" placeholder="밑">
+    <span>의</span>
+    <input id="e" type="number" inputmode="numeric" placeholder="승">
+    <span>승</span>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button id="go">확인</button>
+    <button id="next" class="g">건너뛰기</button>
+  </div>
+  <div class="msg" id="msg"></div>
+</div>
+</div>
+</main>
+<script>
+const ranges={2:[2,11],3:[2,6],4:[2,5],5:[2,4],6:[2,3]};
+const map={};
+for(const b in ranges){for(let e=ranges[b][0];e<=ranges[b][1];e++){const v=Math.pow(+b,e);(map[v]=map[v]||[]).push([+b,e]);}}
+const all=Object.keys(map).map(Number);
+let pool=[],cur=null,solved=0,tries=0,hits=0;
+const $=id=>document.getElementById(id);
+const sup=n=>String(n).replace(/\d/g,d=>"⁰¹²³⁴⁵⁶⁷⁸⁹"[d]);
+const fmt=a=>a.map(([b,e])=>b+sup(e)).join(" = ");
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;}
+function draw(){
+  if(!pool.length){pool=shuffle(all.slice());solved=0;}
+  cur=pool.pop();$("num").textContent=cur;
+  $("b").value="";$("e").value="";$("msg").textContent="";
+  $("prog").textContent=`${all.length-pool.length} / ${all.length} 번째 수`;
+  $("score").textContent=`정답 ${hits} / 시도 ${tries}`;
+  $("b").focus();
+}
+function check(){
+  const b=+$("b").value,e=+$("e").value;
+  if(!b||!e){$("msg").innerHTML='<span class="bad">밑과 지수를 모두 입력하세요.</span>';return;}
+  tries++;
+  const valid=map[cur].some(([x,y])=>x===b&&y===e);
+  const m=$("msg");
+  if(valid){
+    hits++;
+    let extra="";
+    if(map[cur].length>1)extra=`<br>다른 답도 있어요: ${fmt(map[cur])}`;
+    m.innerHTML=`<span class="ok">정답! ${cur} = ${fmt(map[cur])}</span>${extra}`;
+    $("score").textContent=`정답 ${hits} / 시도 ${tries}`;
+    setTimeout(draw,1400);
+  }else{
+    const same=Math.pow(b,e)===cur;
+    m.innerHTML=same?'<span class="bad">값은 맞지만 이번 범위에 없는 밑/지수예요. 목록 안에서 찾아보세요.</span>':'<span class="bad">아니에요. 다시 해보세요.</span>';
+    $("score").textContent=`정답 ${hits} / 시도 ${tries}`;
+  }
+}
+$("go").onclick=check;
+$("next").onclick=()=>{$("msg").innerHTML=`<span class="bad">정답: ${fmt(map[cur])}</span>`;setTimeout(draw,1400);};
+document.addEventListener("keydown",e=>{if(e.key==="Enter")check();});
+$("start").onclick=()=>{$("intro").classList.add("hide");$("game").classList.remove("hide");draw();};
+</script>
+</body>
+</html>
