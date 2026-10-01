@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>불규칙동사 퀴즈</title>
+<style>
+:root{--bg:#f3f6fb;--fg:#1b2333;--card:#fff;--line:#d5dcea;--acc:#2f5bea;--ok:#1f9d55;--bad:#d64545;--muted:#66708a;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root{--bg:#12161f;--fg:#e8ecf5;--card:#1b2130;--line:#2c3550;--acc:#7c9cff;--ok:#4cc783;--bad:#ff7b7b;--muted:#98a2bd}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:system-ui,"Noto Sans KR",sans-serif;display:flex;justify-content:center}
+main{width:100%;max-width:460px;padding:20px 16px 32px}
+h1{font-size:20px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+.c{text-align:center}
+p{line-height:1.6;margin:8px 0}
+.word{font-size:40px;font-weight:700;margin:6px 0 16px}
+label{display:block;text-align:left;font-size:13px;color:var(--muted);margin:10px 0 4px}
+input{width:100%;font-size:20px;padding:10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--fg)}
+button{font-size:16px;padding:12px 18px;border:0;border-radius:10px;background:var(--acc);color:#fff;font-weight:600;cursor:pointer;margin-top:14px;width:100%}
+button.g{background:var(--line);color:var(--fg)}
+.stat{display:flex;justify-content:space-between;color:var(--muted);font-size:13px;margin-bottom:10px}
+.msg{min-height:48px;margin-top:12px;line-height:1.5}
+.ok{color:var(--ok)}.bad{color:var(--bad)}
+.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+<h1>불규칙동사 퀴즈</h1>
+
+<div class="card" id="intro">
+  <p>동사원형이 나오면 <b>과거형</b>과 <b>과거분사(pp)</b>를 적는 퀴즈예요.</p>
+  <p>예) <b>go</b> → went / gone</p>
+  <p>총 100개가 무작위 순서로 나와요. can, may, will처럼 과거분사가 없는 동사는 <b>-</b>를 입력하거나 비워 두세요.</p>
+  <p>끝나면 점수와 틀린 동사를 보여줘요.</p>
+  <button id="start">시작하기</button>
+</div>
+
+<div id="game" class="hide">
+  <div class="stat"><span id="prog"></span><span id="score"></span></div>
+  <div class="card c">
+    <div>원형</div>
+    <div class="word" id="word"></div>
+    <label for="p1">과거형</label><input id="p1" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <label for="p2">과거분사 (pp)</label><input id="p2" autocomplete="off" autocapitalize="none" spellcheck="false">
+    <button id="ok">확인</button>
+    <div class="msg" id="msg"></div>
+    <button id="next" class="g hide">다음</button>
+  </div>
+</div>
+
+<div class="card hide" id="end">
+  <h1 id="res"></h1>
+  <p id="wrong"></p>
+  <button id="again" class="hide">틀린 것만 다시</button>
+  <button id="all" class="g">처음부터 다시</button>
+</div>
+</main>
+
+<script>
+const RAW=`am, is|was|been
+are|were|been
+bear|bore|born
+beat|beat|beat
+become|became|become
+begin|began|begun
+bend|bent|bent
+bet|bet|bet
+bind|bound|bound
+bite|bit|bitten
+blow|blew|blown
+break|broke|broken
+bring|brought|brought
+build|built|built
+buy|bought|bought
+can|could|-
+catch|caught|caught
+choose|chose|chosen
+come|came|come
+cut|cut|cut
+do, does|did|done
+draw|drew|drawn
+drink|drank|drunk
+drive|drove|driven
+eat|ate|eaten
+fall|fell|fallen
+feed|fed|fed
+feel|felt|felt
+fight|fought|fought
+find|found|found
+fly|flew|flown
+forget|forgot|forgotten
+forgive|forgave|forgiven
+freeze|froze|frozen
+get|got|gotten
+give|gave|given
+go|went|gone
+grow|grew|grown
+hang|hung|hung
+have, has|had|had
+hear|heard|heard
+hide|hid|hidden
+hit|hit|hit
+hold|held|held
+hurt|hurt|hurt
+keep|kept|kept
+know|knew|known
+lay|laid|laid
+lead|led|led
+leave|left|left
+lend|lent|lent
+let|let|let
+lie|lay|lain
+lose|lost|lost
+make|made|made
+may|might|-
+mean|meant|meant
+meet|met|met
+mistake|mistook|mistaken
+pay|paid|paid
+put|put|put
+read|read|read
+ride|rode|ridden
+ring|rang|rung
+run|ran|run
+say|said|said
+see|saw|seen
+seek|sought|sought
+sell|sold|sold
+send|sent|sent
+set|set|set
+shake|shook|shaken
+shine|shone|shone
+sing|sang|sung
+sink|sank|sunk
+sit|sat|sat
+sleep|slept|slept
+speak|spoke|spoken
+spell|spelt|spelt
+spend|spent|spent
+split|split|split
+spread|spread|spread
+stand|stood|stood
+steal|stole|stolen
+strike|struck|struck
+sweep|swept|swept
+swim|swam|swum
+swing|swung|swung
+take|took|taken
+teach|taught|taught
+tell|told|told
+think|thought|thought
+throw|threw|thrown
+wake|woke|woken
+wear|wore|worn
+wet|wet|wet
+will|would|-
+win|won|won
+wind|wound|wound
+write|wrote|written`;
+const V=RAW.split("\n").map(l=>l.split("|"));
+const $=id=>document.getElementById(id);
+const show=id=>["intro","game","end"].forEach(x=>$(x).classList.toggle("hide",x!==id));
+let pool=[],cur,idx,total,hits,wrong,checked;
+const norm=s=>{s=s.trim().toLowerCase();return s===""?"-":s};
+function begin(list){
+  pool=list.slice().sort(()=>Math.random()-.5);
+  total=pool.length;idx=0;hits=0;wrong=[];
+  show("game");nextQ();
+}
+function nextQ(){
+  if(!pool.length)return finish();
+  cur=pool.pop();idx++;checked=false;
+  $("word").textContent=cur[0];
+  $("p1").value="";$("p2").value="";$("msg").textContent="";
+  $("ok").classList.remove("hide");$("next").classList.add("hide");
+  $("prog").textContent=idx+" / "+total;
+  $("score").textContent="정답 "+hits;
+  $("p1").focus();
+}
+function check(){
+  if(checked)return;checked=true;
+  const a=norm($("p1").value)===cur[1],b=norm($("p2").value)===cur[2];
+  if(a&&b){hits++;$("msg").innerHTML='<span class="ok">정답! '+cur[1]+' / '+cur[2]+'</span>';}
+  else{wrong.push(cur);$("msg").innerHTML='<span class="bad">오답</span><br>정답: '+cur[1]+' / '+cur[2];}
+  $("score").textContent="정답 "+hits;
+  $("ok").classList.add("hide");$("next").classList.remove("hide");
+}
+function finish(){
+  show("end");
+  $("res").textContent="결과: "+hits+" / "+total;
+  $("wrong").innerHTML=wrong.length?"<b>틀린 동사</b><br>"+wrong.map(w=>w[0]+" → "+w[1]+" / "+w[2]).join("<br>"):"모두 맞혔어요! 🎉";
+  $("again").classList.toggle("hide",!wrong.length);
+}
+$("start").onclick=()=>begin(V);
+$("ok").onclick=check;
+$("next").onclick=nextQ;
+$("again").onclick=()=>{const w=wrong.slice();begin(w)};
+$("all").onclick=()=>begin(V);
+document.addEventListener("keydown",e=>{
+  if(e.key!=="Enter"||$("game").classList.contains("hide"))return;
+  checked?nextQ():check();
+});
+</script>
+</body>
+</html>
